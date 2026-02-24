@@ -2,8 +2,11 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useEffect } from "react";
+
 import { useMutation, useQuery } from "convex/react";
+
 import { api } from "../convex/_generated/api";
+
 
 export default function Home() {
 
@@ -11,7 +14,10 @@ export default function Home() {
 
   const storeUser = useMutation(api.users.storeUser);
 
+  const createConversation = useMutation(api.conversations.createConversation);
+
   const users = useQuery(api.users.getUsers);
+
 
   useEffect(() => {
 
@@ -32,15 +38,48 @@ export default function Home() {
   if (!isLoaded) return <div>Loading...</div>;
 
 
+  const handleClick = async (otherUserId: any) => {
+
+    const myUser = users?.find(u => u.clerkId === user.id);
+
+    if (!myUser) return;
+
+    await createConversation({
+
+      memberIds: [myUser._id, otherUserId]
+
+    });
+
+    alert("Conversation created!");
+
+  };
+
+
   return (
 
-    <div>
+    <div style={{ padding: 20 }}>
 
-      <h1>Users List</h1>
+      <h1>Welcome, {user.fullName}</h1>
 
-      {users?.map((u) => (
+      <h2>Users:</h2>
 
-        <div key={u._id}>{u.name}</div>
+      {users?.map(u => (
+
+        <div key={u._id}>
+
+          {u.name}
+
+          {u.clerkId !== user.id && (
+
+            <button onClick={() => handleClick(u._id)}>
+
+              Chat
+
+            </button>
+
+          )}
+
+        </div>
 
       ))}
 
