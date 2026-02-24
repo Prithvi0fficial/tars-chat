@@ -13,27 +13,19 @@ export default function ChatPage() {
   const { user } = useUser();
   const [message, setMessage] = useState("");
 
-  // get all users from DB
   const users = useQuery(api.users.getUsers);
-
-  // find current user in DB
-  const currentUser = users?.find(
-    (u) => u.clerkId === user?.id
-  );
-
-  // real-time messages
-  const messages = useQuery(api.messages.getMessages, {
-    conversationId,
-  });
+  const messages = useQuery(api.messages.getMessages, { conversationId });
 
   const sendMessage = useMutation(api.messages.sendMessage);
+
+  const currentUser = users?.find((u) => u.clerkId === user?.id);
 
   const handleSend = async () => {
     if (!message.trim() || !currentUser) return;
 
     await sendMessage({
       conversationId,
-      senderId: currentUser._id, // ✅ correct sender id
+      senderId: currentUser._id,
       body: message,
     });
 
@@ -42,19 +34,56 @@ export default function ChatPage() {
 
   if (!messages || !users) return <div>Loading...</div>;
 
+  // helper → find sender info
+  const getSender = (senderId: string) =>
+    users.find((u) => u._id === senderId);
+
   return (
-    <div style={{ padding: 20, maxWidth: 600 }}>
+    <div style={{ padding: 20, maxWidth: 700 }}>
       <h1>Chat</h1>
 
       {/* message list */}
       <div style={{ marginBottom: 20 }}>
         {messages.length === 0 && <p>No messages yet</p>}
 
-        {messages.map((msg) => (
-          <div key={msg._id} style={{ marginBottom: 10 }}>
-            {msg.body}
-          </div>
-        ))}
+        {messages.map((msg) => {
+          const sender = getSender(msg.senderId);
+          const isMe = sender?.clerkId === user?.id;
+
+          return (
+            <div
+              key={msg._id}
+              style={{
+                display: "flex",
+                justifyContent: isMe ? "flex-end" : "flex-start",
+                marginBottom: 12,
+              }}
+            >
+              <div
+                style={{
+                  maxWidth: "60%",
+                  padding: 10,
+                  borderRadius: 10,
+                  background: isMe ? "#007bff" : "#eee",
+                  color: isMe ? "white" : "black",
+                }}
+              >
+                {/* sender name */}
+                <div style={{ fontSize: 12, fontWeight: 600 }}>
+                  {isMe ? "You" : sender?.name || "User"}
+                </div>
+
+                {/* message */}
+                <div>{msg.body}</div>
+
+                {/* timestamp */}
+                <div style={{ fontSize: 10, marginTop: 4 }}>
+                  {new Date(msg.createdAt).toLocaleTimeString()}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* message input */}
@@ -65,7 +94,6 @@ export default function ChatPage() {
           placeholder="Type a message..."
           style={{ flex: 1, padding: 8 }}
         />
-
         <button onClick={handleSend}>Send</button>
       </div>
     </div>

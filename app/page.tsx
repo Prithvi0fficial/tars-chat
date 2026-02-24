@@ -1,13 +1,16 @@
 "use client";
 
+import { UserButton } from "@clerk/nextjs";
 import { useUser } from "@clerk/nextjs";
 import { useEffect } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { useRouter } from "next/navigation";
+import { Id } from "../convex/_generated/dataModel";
 
 export default function Home() {
   const { user, isLoaded } = useUser();
+  console.log(user);
   const router = useRouter();
 
   const storeUser = useMutation(api.users.storeUser);
@@ -29,21 +32,35 @@ export default function Home() {
   if (!isLoaded) return <div>Loading...</div>;
   if (!users) return <div>Loading users...</div>;
 
-  const handleClick = async (otherUserId: string) => {
+  
+
+  const handleClick = async (otherUserId: Id<"users">) => {
+
     const myUser = users.find((u) => u.clerkId === user?.id);
+
     if (!myUser) return;
 
     const conversationId = await createConversation({
       memberIds: [myUser._id, otherUserId],
     });
 
-    // redirect to chat page (future step)
     router.push(`/chat/${conversationId}`);
   };
-
   return (
     <div style={{ padding: 20, maxWidth: 500 }}>
-      <h1>Welcome, {user?.fullName}</h1>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }}>
+
+        <h2>
+          Welcome {user?.fullName || user?.firstName || "User"}
+        </h2>
+
+        <UserButton afterSignOutUrl="/sign-in" />
+
+      </div>
 
       <h2 style={{ marginTop: 30 }}>Users</h2>
 
