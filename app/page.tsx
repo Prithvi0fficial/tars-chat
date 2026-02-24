@@ -1,19 +1,21 @@
 "use client";
 
-import { useUser, SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { useEffect } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 
 export default function Home() {
 
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
 
   const storeUser = useMutation(api.users.storeUser);
 
+  const users = useQuery(api.users.getUsers);
+
   useEffect(() => {
 
-    if (!user) return;
+    if (!isLoaded || !user) return;
 
     storeUser({
 
@@ -24,29 +26,23 @@ export default function Home() {
 
     });
 
-  }, [user, storeUser]);
+  }, [isLoaded, user, storeUser]);
+
+
+  if (!isLoaded) return <div>Loading...</div>;
+
 
   return (
 
-    <div style={{ padding: "20px" }}>
+    <div>
 
-      <SignedOut>
+      <h1>Users List</h1>
 
-        <SignInButton />
+      {users?.map((u) => (
 
-      </SignedOut>
+        <div key={u._id}>{u.name}</div>
 
-      <SignedIn>
-
-        <UserButton />
-
-        <h1>
-
-          Welcome, {user?.fullName} 👋
-
-        </h1>
-
-      </SignedIn>
+      ))}
 
     </div>
 
