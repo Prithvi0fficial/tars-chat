@@ -1,8 +1,8 @@
 "use client";
 
 import { ClerkProvider } from "@clerk/nextjs";
-import { ConvexReactClient } from "convex/react";
-import { ConvexProvider } from "convex/react";
+import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { ReactNode } from "react";
 
 const convex = new ConvexReactClient(
   process.env.NEXT_PUBLIC_CONVEX_URL!
@@ -11,29 +11,15 @@ const convex = new ConvexReactClient(
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
-
   return (
-
-    <html lang="en">
-
-      <body>
-
-        <ClerkProvider>
-
-          <ConvexProvider client={convex}>
-
-            {children}
-
-          </ConvexProvider>
-
-        </ClerkProvider>
-
-      </body>
-
-    </html>
-
+    <ClerkProvider>
+      <ConvexProvider client={convex}>
+        <html lang="en">
+          <body>{children}</body>
+        </html>
+      </ConvexProvider>
+    </ClerkProvider>
   );
-
 }
