@@ -9,6 +9,7 @@ export const createConversation = mutation({
   },
 
   handler: async (ctx, args) => {
+
     const sortedMembers = [...args.memberIds].sort();
 
     const conversations = await ctx.db.query("conversations").collect();
@@ -26,11 +27,13 @@ export const createConversation = mutation({
     });
   },
 });
+
 // get conversations
 export const getConversations = query({
   args: { userId: v.id("users") },
 
   handler: async (ctx, args) => {
+
     const conversations = await ctx.db.query("conversations").collect();
 
     return conversations.filter(c =>
