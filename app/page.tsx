@@ -1,42 +1,55 @@
 "use client";
 
-import {
-  SignInButton,
-  SignedIn,
-  SignedOut,
-  UserButton,
-  useUser,
-} from "@clerk/nextjs";
+import { useUser, SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { useEffect } from "react";
+import { useMutation } from "convex/react";
+import { api } from "../convex/_generated/api";
 
 export default function Home() {
 
   const { user } = useUser();
 
+  const storeUser = useMutation(api.users.storeUser);
+
+  useEffect(() => {
+
+    if (!user) return;
+
+    storeUser({
+
+      clerkId: user.id,
+      name: user.fullName || "",
+      email: user.primaryEmailAddress?.emailAddress || "",
+      image: user.imageUrl || "",
+
+    });
+
+  }, [user, storeUser]);
+
   return (
-    <main className="flex flex-col items-center justify-center h-screen gap-6">
+
+    <div style={{ padding: "20px" }}>
 
       <SignedOut>
-        <SignInButton mode="modal">
-          <button className="bg-black text-white px-6 py-2 rounded-lg">
-            Sign In
-          </button>
-        </SignInButton>
+
+        <SignInButton />
+
       </SignedOut>
 
       <SignedIn>
 
-        <div className="flex items-center gap-4">
+        <UserButton />
 
-          <UserButton />
+        <h1>
 
-          <span className="text-lg font-semibold">
-            Welcome, {user?.firstName}
-          </span>
+          Welcome, {user?.fullName} 👋
 
-        </div>
+        </h1>
 
       </SignedIn>
 
-    </main>
+    </div>
+
   );
+
 }
