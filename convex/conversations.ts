@@ -2,7 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 
-// Create conversation
+// create conversation
 export const createConversation = mutation({
 
   args: {
@@ -12,6 +12,19 @@ export const createConversation = mutation({
   },
 
   handler: async (ctx, args) => {
+
+    // check if conversation already exists
+
+    const conversations = await ctx.db.query("conversations").collect();
+
+    const existing = conversations.find(c =>
+
+      c.memberIds.length === args.memberIds.length &&
+      c.memberIds.every(id => args.memberIds.includes(id))
+
+    );
+
+    if (existing) return existing._id;
 
     return await ctx.db.insert("conversations", {
 
@@ -26,21 +39,12 @@ export const createConversation = mutation({
 
 
 
-// Get conversations of user
+// get conversations
+export const getConversations = query({
 
-export const getUserConversations = query({
+  handler: async (ctx) => {
 
-  args: {
-
-    userId: v.id("users"),
-
-  },
-
-  handler: async (ctx, args) => {
-
-    return await ctx.db
-      .query("conversations")
-      .collect();
+    return await ctx.db.query("conversations").collect();
 
   },
 
