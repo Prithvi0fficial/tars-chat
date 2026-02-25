@@ -8,6 +8,7 @@ export default defineSchema({
     email: v.string(),
     image: v.string(),
     isOnline: v.optional(v.boolean()), //  new field/optional
+    isTyping: v.optional(v.boolean())
   }).index("by_clerkId", ["clerkId"]),
 
   conversations: defineTable({

@@ -58,3 +58,11 @@ export const setOnlineStatus = mutation(
     await db.patch(user._id, { isOnline });
   }
 );
+// for typing
+export const setTypingStatus = mutation(
+  async ({ db }, { userId, conversationId, isTyping }: { userId: string; conversationId: string; isTyping: boolean }) => {
+    const user = await db.query("users").withIndex("by_clerkId", q => q.eq("clerkId", userId)).first();
+    if (!user) throw new Error("User not found");
+    await db.patch(user._id, { isTyping });
+  }
+);
