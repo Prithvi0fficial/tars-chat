@@ -23,6 +23,7 @@ export default defineSchema({
     body: v.string(),
     createdAt: v.number(),
     isDeleted: v.boolean(),
+    seenBy: v.optional(v.array(v.id("users"))) 
   }).index("by_conversation", ["conversationId"]),
 
   reactions: defineTable({

@@ -8,171 +8,410 @@ import { useUser } from "@clerk/nextjs";
 import { Id } from "../../../convex/_generated/dataModel";
 
 export default function ChatPage() {
+
   const router = useRouter();
   const params = useParams();
   const { user, isLoaded } = useUser();
+
   const [message, setMessage] = useState("");
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // ✅ Early guard for TypeScript / auth
-  if (!isLoaded || !user) return <div>Loading...</div>;
-
-  // ✅ Conversation ID
+  // extract id
   const rawConversationId = params.conversationId as string;
+
   const conversationId =
     rawConversationId?.length > 20
-      ? (rawConversationId as Id<"conversations">)
-      : null;
+      ? rawConversationId as Id<"conversations">
+      : undefined;
 
-  // ✅ Always call hooks at top
-  const conversationQueryArgs = conversationId ? { conversationId } : "skip";
-  const conversation = useQuery(api.conversations.getConversation, conversationQueryArgs);
-  const messages = useQuery(api.messages.getMessages, conversationQueryArgs);
+  // queries
+  const conversation = useQuery(
+    api.conversations.getConversation,
+    conversationId ? { conversationId } : "skip"
+  );
+
+  const messages = useQuery(
+    api.messages.getMessages,
+    conversationId ? { conversationId } : "skip"
+  );
+
   const users = useQuery(api.users.getUsers);
 
+  // mutations
   const sendMessage = useMutation(api.messages.sendMessage);
   const setOnlineStatus = useMutation(api.users.setOnlineStatus);
   const setTypingStatus = useMutation(api.users.setTypingStatus);
+  const markAsSeen = useMutation(api.messages.markAsSeen);
+  // SAFE VALIDATION
 
-  // ✅ Protect invalid conversation (stable dependencies)
+useEffect(() => {
+
+  // not logged in
+  if (isLoaded && !user)
+    router.replace("/");
+
+}, [isLoaded, user, router]);
+
+
+
+useEffect(() => {
+
+  // invalid id format
+  if (!conversationId)
+    router.replace("/");
+
+}, [conversationId, router]);
+
+
+
+useEffect(() => {
+
+  // conversation not exists
+  if (conversation === null)
+    router.replace("/");
+
+}, [conversation, router]);
+
+
+
+useEffect(() => {
+
+  // user not member
+  if (!conversation || !users || !user) return;
+
+  const currentUser =
+    users.find(u => u.clerkId === user.id);
+
+  if (
+    currentUser &&
+    !conversation.memberIds.includes(currentUser._id)
+  ) {
+    router.replace("/");
+  }
+
+}, [conversation, users, user, router]);
+
+  // define currentUser EARLY
+  const currentUser =
+    users?.find(u => u.clerkId === user?.id);
+
+  const otherUser =
+    users?.find(
+      u =>
+        conversation?.memberIds.includes(u._id) &&
+        u._id !== currentUser?._id
+    );
+
+  // redirect auth
   useEffect(() => {
-    if (!conversationId || conversation === null) {
+
+    if (isLoaded && !user)
       router.replace("/");
-    }
-  }, [conversationId, conversation?._id, router]);
 
-  // ✅ Scroll to bottom on new messages
+  }, [isLoaded, user, router]);
+
+  // redirect invalid conversation
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages?.length]);
 
-  // ✅ Set online/offline status
+    if (conversation === null)
+      router.replace("/");
+
+  }, [conversation, router]);
+
+  // scroll
   useEffect(() => {
-    setOnlineStatus({ userId: user.id, isOnline: true });
 
-    const handleBeforeUnload = () =>
-      setOnlineStatus({ userId: user.id, isOnline: false });
+    messagesEndRef.current?.scrollIntoView();
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
+  }, [messages]);
+
+  // online status
+  useEffect(() => {
+
+    if (!user) return;
+
+    setOnlineStatus({
+      userId: user.id,
+      isOnline: true,
+    });
+
     return () => {
-      setOnlineStatus({ userId: user.id, isOnline: false });
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [user.id, setOnlineStatus]);
 
-  if (!conversationId || !messages || !users || !conversation)
+      setOnlineStatus({
+        userId: user.id,
+        isOnline: false,
+      });
+
+    };
+
+  }, [user, setOnlineStatus]);
+
+  // ✅ mark seen FIXED LOCATION
+  useEffect(() => {
+
+    if (!messages || !currentUser) return;
+
+    messages.forEach(msg => {
+
+      if (!msg.seenBy?.includes(currentUser._id)) {
+
+        markAsSeen({
+
+          messageId: msg._id,
+          userId: currentUser._id
+
+        });
+
+      }
+
+    });
+
+  }, [messages, currentUser, markAsSeen]);
+
+  // ✅ ONLY NOW return
+
+  if (
+    !isLoaded ||
+    !user ||
+    !conversation ||
+    !messages ||
+    !users ||
+    !currentUser
+  )
     return <div>Loading...</div>;
 
-  const currentUser = users.find(u => u.clerkId === user.id);
-  const otherUser = users.find(
-    u => u._id !== currentUser?._id && conversation.memberIds.includes(u._id)
-  );
-
-  // ✅ Send message
+  // send function
   const handleSend = async () => {
-    if (!message.trim() || !currentUser) return;
 
-    await sendMessage({
-      conversationId,
-      senderId: currentUser._id,
-      body: message,
-    });
+    if (!message.trim()) return;
+
+if (!conversationId) return;
+
+await sendMessage({
+  conversationId: conversationId,
+  senderId: currentUser._id,
+  body: message
+});
 
     setMessage("");
-    setTypingStatus({ userId: user.id, conversationId, isTyping: false });
-  };
 
-  // ✅ Typing indicator
-  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMessage(e.target.value);
     setTypingStatus({
+
       userId: user.id,
       conversationId,
-      isTyping: e.target.value.length > 0,
+      isTyping: false
+
     });
+
   };
 
-  const getSender = (senderId: string) => users.find(u => u._id === senderId);
+
+
+  const handleTyping = (e: any) => {
+
+    setMessage(e.target.value);
+if (!conversationId) return;
+    setTypingStatus({
+
+      userId: user.id,
+
+      conversationId,
+
+      isTyping: e.target.value.length > 0
+
+    });
+
+  };
+
+
+
+  // ticks
+  const renderTicks = (msg: any) => {
+
+    if (msg.senderId !== currentUser._id)
+      return null;
+
+    const seenCount = msg.seenBy?.length || 0;
+
+    if (seenCount === 1)
+      return "✔";
+
+    if (seenCount === 2)
+      return (
+        <span style={{ color: "blue" }}>
+          ✔✔
+        </span>
+      );
+
+  };
+
+
+
 
   return (
-    <div style={{ padding: 20, maxWidth: 700 }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+
+    <div style={{ maxWidth: 700, margin: "auto" }}>
+
+
+
+      {/* header */}
+
+      <div style={{
+        padding: 10,
+        borderBottom: "1px solid #ddd"
+      }}>
+
         {otherUser && (
-          <>
-            <div
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: "50%",
-                backgroundColor: otherUser.isOnline ? "green" : "gray",
-              }}
-            ></div>
+
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10
+          }}>
+
+
+            {/* online dot */}
+
+            <div style={{
+
+              width: 12,
+
+              height: 12,
+
+              borderRadius: "50%",
+
+              background:
+                otherUser.isOnline
+                  ? "green"
+                  : "red"
+
+            }} />
+
+
             <div>
-              <div style={{ fontWeight: 600 }}>{otherUser.name}</div>
+
+              {otherUser.name}
+
               {otherUser.isTyping && (
-                <div style={{ fontSize: 12, color: "#555" }}>Typing...</div>
+
+                <div style={{
+                  fontSize: 12
+                }}>
+                  typing...
+                </div>
+
               )}
+
             </div>
-          </>
+
+          </div>
+
         )}
+
       </div>
 
-      {/* Messages */}
-      <div
-        style={{
-          marginBottom: 20,
-          minHeight: 300,
-          border: "1px solid #ddd",
-          padding: 12,
-          borderRadius: 8,
-          overflowY: "auto",
-        }}
-      >
-        {messages.length === 0 && <p>No messages yet</p>}
+
+
+
+      {/* messages */}
+
+      <div style={{
+        height: 400,
+        overflowY: "auto",
+        padding: 10
+      }}>
 
         {messages.map(msg => {
-          const sender = getSender(msg.senderId);
-          const isMe = sender?.clerkId === user.id;
+
+          const isMe =
+            msg.senderId === currentUser._id;
+
           return (
-            <div
-              key={msg._id}
+
+            <div key={msg._id}
+
               style={{
-                display: "flex",
-                justifyContent: isMe ? "flex-end" : "flex-start",
-                marginBottom: 12,
-              }}
-            >
-              <div
-                style={{
-                  maxWidth: "60%",
-                  padding: 10,
-                  borderRadius: 10,
-                  background: isMe ? "#007bff" : "#f0ecec",
-                  color: isMe ? "white" : "black",
-                }}
-              >
-                <div style={{ fontSize: 12, fontWeight: 600 }}>
-                  {isMe ? "You" : sender?.name}
-                </div>
-                <div>{msg.body}</div>
-              </div>
+
+                textAlign:
+                  isMe
+                    ? "right"
+                    : "left",
+
+                margin: 10
+
+              }}>
+
+              <span style={{
+
+                background:
+                  isMe
+                    ? "#007bff"
+                    : "#eee",
+
+                color:
+                  isMe
+                    ? "white"
+                    : "black",
+
+                padding: 10,
+
+                borderRadius: 10,
+
+                display: "inline-block"
+
+              }}>
+
+                {msg.body}
+
+                <span style={{
+                  marginLeft: 8,
+                  fontSize: 12
+                }}>
+                  {renderTicks(msg)}
+                </span>
+
+              </span>
+
             </div>
+
           );
+
         })}
-        <div ref={messagesEndRef}></div>
+
+        <div ref={messagesEndRef} />
+
       </div>
 
-      {/* Input */}
-      <div style={{ display: "flex", gap: 10 }}>
+
+
+
+      {/* input */}
+
+      <div style={{
+        display: "flex",
+        gap: 10,
+        padding: 10
+      }}>
+
         <input
+
           value={message}
+
           onChange={handleTyping}
-          placeholder="Type message"
-          style={{ flex: 1, padding: 8 }}
+
+          style={{ flex: 1 }}
+
         />
-        <button onClick={handleSend}>Send</button>
+
+        <button onClick={handleSend}>
+          Send
+        </button>
+
       </div>
+
     </div>
+
   );
+
 }

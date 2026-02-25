@@ -1,12 +1,10 @@
 // convex/users.ts
+
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-/**
- * Store a user in the DB.
- * If the user already exists (by clerkId), returns existing user.
- * Otherwise, inserts a new user.
- */
+
+// ✅ Store user safely
 export const storeUser = mutation({
   args: {
     clerkId: v.string(),
@@ -14,55 +12,133 @@ export const storeUser = mutation({
     email: v.string(),
     image: v.string(),
   },
+
   handler: async (ctx, args) => {
+
     const existingUser = await ctx.db
       .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
+      .withIndex("by_clerkId", q => q.eq("clerkId", args.clerkId))
       .unique();
 
     if (existingUser) {
-      return existingUser;
+
+      // update latest info
+      await ctx.db.patch(existingUser._id, {
+        name: args.name,
+        email: args.email,
+        image: args.image,
+      });
+
+      return existingUser._id;
     }
 
-    // Insert new user; `isOnline` will be set separately via setOnlineStatus
-    return await ctx.db.insert("users", args);
+
+    // create new user
+    return await ctx.db.insert("users", {
+      ...args,
+      isOnline: true,
+      isTyping: false,
+    });
+
   },
 });
 
+
+
 /**
- * Get all users from DB.
- * Used for listing users in the chat app.
+ * ✅ Get all users
  */
 export const getUsers = query({
+
   handler: async (ctx) => {
-    return await ctx.db.query("users").collect();
+
+    return await ctx.db
+      .query("users")
+      .collect();
+
   },
+
 });
 
+
+
 /**
- * Set a user's online/offline status.
- * This is separate from storeUser to avoid validation issues.
+ * ✅ PRODUCTION SAFE ONLINE STATUS
+ * Never throws error
  */
-export const setOnlineStatus = mutation(
-  async (
-    { db },
-    { userId, isOnline }: { userId: string; isOnline: boolean }
-  ) => {
-    const user = await db
+export const setOnlineStatus = mutation({
+
+  args: {
+    userId: v.string(),
+    isOnline: v.boolean(),
+  },
+
+  handler: async (ctx, args) => {
+
+    const user = await ctx.db
       .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", userId))
+      .withIndex("by_clerkId", q => q.eq("clerkId", args.userId))
+      .unique();
+
+
+    // ✅ If user not exist → create safely
+    if (!user) {
+
+      await ctx.db.insert("users", {
+
+        clerkId: args.userId,
+        name: "User",
+        email: "",
+        image: "",
+        isOnline: args.isOnline,
+        isTyping: false,
+
+      });
+
+      return;
+
+    }
+
+
+    // ✅ Update existing user
+    await ctx.db.patch(user._id, {
+
+      isOnline: args.isOnline,
+
+    });
+
+  },
+
+});
+
+
+
+/**
+ * ✅ Typing status safe
+ */
+export const setTypingStatus = mutation({
+
+  args: {
+    userId: v.string(),
+    conversationId: v.id("conversations"),
+    isTyping: v.boolean(),
+  },
+
+  handler: async (ctx, args) => {
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", q =>
+        q.eq("clerkId", args.userId)
+      )
       .first();
 
-    if (!user) throw new Error("User not found");
+    if (!user) return; // production safe
 
-    await db.patch(user._id, { isOnline });
-  }
-);
-// for typing
-export const setTypingStatus = mutation(
-  async ({ db }, { userId, conversationId, isTyping }: { userId: string; conversationId: string; isTyping: boolean }) => {
-    const user = await db.query("users").withIndex("by_clerkId", q => q.eq("clerkId", userId)).first();
-    if (!user) throw new Error("User not found");
-    await db.patch(user._id, { isTyping });
-  }
-);
+    await ctx.db.patch(user._id, {
+      isTyping: args.isTyping
+    });
+
+  },
+
+});
