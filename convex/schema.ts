@@ -2,12 +2,12 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-
   users: defineTable({
     clerkId: v.string(),
     name: v.string(),
     email: v.string(),
     image: v.string(),
+    isOnline: v.optional(v.boolean()), //  new field/optional
   }).index("by_clerkId", ["clerkId"]),
 
   conversations: defineTable({
@@ -29,5 +29,4 @@ export default defineSchema({
     userId: v.id("users"),
     emoji: v.string(),
   }).index("by_message", ["messageId"]),
-
 });
