@@ -16,6 +16,16 @@ export default function ChatPage() {
   const [message, setMessage] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const formatTime = (timestamp: number) => {
+
+    const date = new Date(timestamp);
+
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+  };
 
   // extract id
   const rawConversationId = params.conversationId as string;
@@ -45,52 +55,52 @@ export default function ChatPage() {
   const markAsSeen = useMutation(api.messages.markAsSeen);
   // SAFE VALIDATION
 
-useEffect(() => {
+  useEffect(() => {
 
-  // not logged in
-  if (isLoaded && !user)
-    router.replace("/");
+    // not logged in
+    if (isLoaded && !user)
+      router.replace("/");
 
-}, [isLoaded, user, router]);
-
-
-
-useEffect(() => {
-
-  // invalid id format
-  if (!conversationId)
-    router.replace("/");
-
-}, [conversationId, router]);
+  }, [isLoaded, user, router]);
 
 
 
-useEffect(() => {
+  useEffect(() => {
 
-  // conversation not exists
-  if (conversation === null)
-    router.replace("/");
+    // invalid id format
+    if (!conversationId)
+      router.replace("/");
 
-}, [conversation, router]);
+  }, [conversationId, router]);
 
 
 
-useEffect(() => {
+  useEffect(() => {
 
-  // user not member
-  if (!conversation || !users || !user) return;
+    // conversation not exists
+    if (conversation === null)
+      router.replace("/");
 
-  const currentUser =
-    users.find(u => u.clerkId === user.id);
+  }, [conversation, router]);
 
-  if (
-    currentUser &&
-    !conversation.memberIds.includes(currentUser._id)
-  ) {
-    router.replace("/");
-  }
 
-}, [conversation, users, user, router]);
+
+  useEffect(() => {
+
+    // user not member
+    if (!conversation || !users || !user) return;
+
+    const currentUser =
+      users.find(u => u.clerkId === user.id);
+
+    if (
+      currentUser &&
+      !conversation.memberIds.includes(currentUser._id)
+    ) {
+      router.replace("/");
+    }
+
+  }, [conversation, users, user, router]);
 
   // define currentUser EARLY
   const currentUser =
@@ -186,13 +196,13 @@ useEffect(() => {
 
     if (!message.trim()) return;
 
-if (!conversationId) return;
+    if (!conversationId) return;
 
-await sendMessage({
-  conversationId: conversationId,
-  senderId: currentUser._id,
-  body: message
-});
+    await sendMessage({
+      conversationId: conversationId,
+      senderId: currentUser._id,
+      body: message
+    });
 
     setMessage("");
 
@@ -211,7 +221,7 @@ await sendMessage({
   const handleTyping = (e: any) => {
 
     setMessage(e.target.value);
-if (!conversationId) return;
+    if (!conversationId) return;
     setTypingStatus({
 
       userId: user.id,
@@ -362,14 +372,24 @@ if (!conversationId) return;
 
               }}>
 
-                {msg.body}
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
 
-                <span style={{
-                  marginLeft: 8,
-                  fontSize: 12
-                }}>
-                  {renderTicks(msg)}
-                </span>
+                  <span>{msg.body}</span>
+
+                  <span style={{
+                    fontSize: 11,
+                    color: isMe ? "#ddd" : "#555"
+                  }}>
+                    {formatTime(msg.createdAt)}
+                  </span>
+
+                  <span style={{
+                    fontSize: 11
+                  }}>
+                    {renderTicks(msg)}
+                  </span>
+
+                </div>
 
               </span>
 
