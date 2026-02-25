@@ -155,3 +155,18 @@ export const deleteMessage = mutation({
   },
 
 });
+
+export const getLastMessage = query({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+
+    return await ctx.db
+      .query("messages")
+      .withIndex("by_conversation", q =>
+        q.eq("conversationId", args.conversationId)
+      )
+      .order("desc")
+      .first();
+
+  }
+});
