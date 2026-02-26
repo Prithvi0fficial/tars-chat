@@ -6,6 +6,7 @@ import { api } from "../../../convex/_generated/api";
 import { useState, useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Id } from "../../../convex/_generated/dataModel";
+import { FaTrash } from "react-icons/fa";
 
 export default function ChatPage() {
 
@@ -53,8 +54,27 @@ export default function ChatPage() {
   const setOnlineStatus = useMutation(api.users.setOnlineStatus);
   const setTypingStatus = useMutation(api.users.setTypingStatus);
   const markAsSeen = useMutation(api.messages.markAsSeen);
+  const deleteMessage = useMutation(api.messages.deleteMessage);
   // SAFE VALIDATION
+  const handleDelete = async (messageId: Id<"messages">) => {
 
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this message?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+
+      await deleteMessage({ messageId });
+
+    } catch (error) {
+
+      console.error("Delete failed:", error);
+
+    }
+
+  };
   useEffect(() => {
 
     // not logged in
@@ -409,9 +429,42 @@ export default function ChatPage() {
                   </div>
 
                 </div>
+                
 
               </span>
+                    { !msg.isDeleted && (
 
+                      <button
+
+                        onClick={() => handleDelete(msg._id)}
+
+                        title="Delete message"
+
+                        style={{
+
+                          marginLeft: 6,
+
+                          border: "none",
+
+                          background: "transparent",
+
+                          cursor: "pointer",
+
+                          color: "grey",
+
+                          display: "inline-flex",
+
+                          alignItems: "center"
+
+                        }}
+
+                      >
+
+                        <FaTrash size={12} />
+
+                      </button>
+
+                    )}
             </div>
 
           );

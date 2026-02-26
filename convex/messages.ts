@@ -133,17 +133,29 @@ export const markAsSeen = mutation({
  * ✅ Delete message
  */
 export const deleteMessage = mutation({
-
   args: {
-
     messageId: v.id("messages"),
-
   },
-
 
   handler: async (ctx, args) => {
 
+    const message =
+      await ctx.db.get(args.messageId);
 
+    if (!message)
+      throw new Error("Message not found");
+
+
+    // ✅ allow deletion by ANY conversation member
+
+    const conversation =
+      await ctx.db.get(message.conversationId);
+
+    if (!conversation)
+      throw new Error("Conversation not found");
+
+
+    // soft delete
     await ctx.db.patch(args.messageId, {
 
       body: "This message was deleted",
@@ -153,7 +165,6 @@ export const deleteMessage = mutation({
     });
 
   },
-
 });
 
 // LAST MESSAGE
