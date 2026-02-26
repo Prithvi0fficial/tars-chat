@@ -156,17 +156,66 @@ export const deleteMessage = mutation({
 
 });
 
+// LAST MESSAGE
 export const getLastMessage = query({
-  args: { conversationId: v.id("conversations") },
+
+  args: {
+    conversationId: v.id("conversations"),
+  },
+
   handler: async (ctx, args) => {
 
-    return await ctx.db
-      .query("messages")
-      .withIndex("by_conversation", q =>
-        q.eq("conversationId", args.conversationId)
-      )
-      .order("desc")
-      .first();
+    const messages =
+      await ctx.db
+        .query("messages")
+        .withIndex(
+          "by_conversation",
+          q => q.eq(
+            "conversationId",
+            args.conversationId
+          )
+        )
+        .collect();
 
-  }
+    return messages.sort(
+      (a, b) =>
+        b.createdAt - a.createdAt
+    )[0];
+
+  },
+
+});
+
+
+// UNREAD COUNT
+export const getUnreadCount = query({
+
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+  },
+
+  handler: async (ctx, args) => {
+
+    const messages =
+      await ctx.db
+        .query("messages")
+        .withIndex(
+          "by_conversation",
+          q => q.eq(
+            "conversationId",
+            args.conversationId
+          )
+        )
+        .collect();
+
+    return messages.filter(
+      m =>
+        m.senderId !== args.userId
+        &&
+        !m.seenBy?.includes(args.userId)
+    ).length;
+
+  },
+
 });
