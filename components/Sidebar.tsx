@@ -81,7 +81,11 @@ export default function Sidebar() {
             .includes(search.toLowerCase());
 
         })
-
+        .sort(
+          (a, b) =>
+            b._creationTime -
+            a._creationTime
+        )
         .map(conversation => (
 
           <ConversationItem
