@@ -8,11 +8,21 @@ export default function ChatLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ display: "flex" }}>
-      <Sidebar />
+    <div className="h-screen w-screen bg-gray-100 flex justify-center">
 
-      <div style={{ flex: 1 }}>
-        {children}
+      {/* Center container (fixes ugly wide screen) */}
+      <div className="w-full max-w-[1400px] h-full flex shadow-lg bg-white">
+
+        {/* Sidebar */}
+        <div className="hidden md:block w-80 border-r">
+          <Sidebar />
+        </div>
+
+        {/* Chat area */}
+        <div className="flex-1 flex flex-col">
+          {children}
+        </div>
+
       </div>
     </div>
   );

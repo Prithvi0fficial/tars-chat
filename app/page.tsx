@@ -108,8 +108,12 @@ export default function Home() {
                 Chat
               </button>
             </div>
+            
           ))}
       </div>
+          <div>
+
+    </div>
     </div>
   );
 }

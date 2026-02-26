@@ -40,107 +40,79 @@ export default function ConversationItem({
     if (!otherUser)
         return null;
 
-    return (
+return (
+  
+  <div
+    onClick={() => router.push(`/chat/${conversation._id}`)}
+    className="flex gap-3 p-4 border-b cursor-pointer hover:bg-gray-50"
 
-        <div
+    
+  >
+    {/* Profile avatar with online badge */}
+<div className="relative w-12 h-12 flex-shrink-0">
 
-            onClick={() =>
-                router.push(`/chat/${conversation._id}`)
-            }
+  {/* profile image */}
+  <img
+    src={otherUser.image || "/default-avatar.png"}
+    alt={otherUser.name}
+    className="w-12 h-12 rounded-full object-cover"
+  />
 
-            style={{
-                padding: 15,
-                borderBottom: "1px solid #eee",
-                cursor: "pointer",
-                display: "flex",
-                gap: 10
-            }}
+  {/* online indicator */}
+  {otherUser.isOnline && (
+    <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full" />
+  )}
 
-        >
+</div>
+    {/* Online dot
+    <div
+      className={`w-2.5 h-2.5 rounded-full mt-2 ${
+        otherUser.isOnline ? "bg-green-500" : "bg-red-500"
+      }`}
+    /> */}
 
-            {/* Online dot */}
+    {/* Content (VERY IMPORTANT min-w-0) */}
+    <div className="flex-1 min-w-0">
+      {/* Name */}
+      <div
+        className={`truncate ${
+          (unread ?? 0) > 0 ? "font-semibold" : ""
+        }`}
+      >
+        {otherUser.name}
+      </div>
 
-            <div style={{
-                width: 10,
-                height: 10,
-                borderRadius: "50%",
-                background:
-                    otherUser.isOnline
-                        ? "green"
-                        : "red",
-                marginTop: 6
-            }} />
+      {/* Last message */}
+      <div
+        className={`text-sm text-gray-500 truncate ${
+          (unread ?? 0) > 0 ? "font-semibold" : ""
+        }`}
+      >
+        {lastMessage && (
+          <>
+            {lastMessage.senderId === currentUser._id ? "You: " : ""}
+            {lastMessage.body}
+          </>
+        )}
+      </div>
+    </div>
 
-            {/* Content */}
+    {/* Right side */}
+    <div className="text-right flex flex-col items-end">
+      <div className="text-xs text-gray-500">
+        {lastMessage &&
+          new Date(lastMessage.createdAt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+      </div>
 
-            <div style={{ flex: 1 }}>
-
-                <div
-                    style={{
-                        fontWeight:
-                            (unread ?? 0) > 0
-                                ? "bold"
-                                : "normal"
-                    }}
-                >
-                    {otherUser.name}
-                </div>
-
-                <div style={{
-                    fontSize: 13,
-                    color: "gray",
-
-                    fontWeight:
-                        (unread ?? 0) > 0
-                            ? "bold"
-                            : "normal"
-                }}>
-                    {lastMessage && (
-                        <>
-                            {lastMessage.senderId === currentUser._id
-                                ? "You: "
-                                : ""}
-
-                            {lastMessage.body}
-                        </>
-                    )}
-                </div>
-
-            </div>
-
-            {/* Right side */}
-
-            <div style={{ textAlign: "right" }}>
-
-                <div style={{ fontSize: 12 }}>
-                    {lastMessage &&
-                        new Date(
-                            lastMessage.createdAt
-                        ).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit"
-                        })}
-                </div>
-
-                {unread! > 0 && (
-
-                    <div style={{
-                        background: "green",
-                        color: "white",
-                        borderRadius: 12,
-                        padding: "2px 8px",
-                        fontSize: 12,
-                        marginTop: 5
-                    }}>
-                        {unread}
-                    </div>
-
-                )}
-
-            </div>
-
+      {unread! > 0 && (
+        <div className="bg-green-500 text-white rounded-full px-2 text-xs mt-1">
+          {unread}
         </div>
-
-    );
-
+      )}
+    </div>
+  </div>
+);
 }

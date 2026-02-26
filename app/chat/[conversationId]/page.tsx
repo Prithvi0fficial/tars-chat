@@ -1,5 +1,6 @@
 "use client";
 
+import { IoCheckmark, IoCheckmarkDone } from "react-icons/io5";
 import { useRouter, useParams } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
@@ -177,7 +178,7 @@ export default function ChatPage() {
 
   }, [user, setOnlineStatus]);
 
-  // ✅ mark seen FIXED LOCATION
+  //  mark seen 
   useEffect(() => {
 
     if (!messages || !currentUser) return;
@@ -257,31 +258,32 @@ export default function ChatPage() {
 
 
   // ticks
+
+
   const renderTicks = (msg: any) => {
+    // show ticks only for messages sent by me
+    if (msg.senderId !== currentUser._id) return null;
 
-    if (msg.senderId !== currentUser._id)
-      return null;
+    const isSeen = msg.seenBy?.includes(otherUser?._id);
 
-    const seenCount = msg.seenBy?.length || 0;
-
-    if (seenCount === 1)
-      return "✔";
-
-    if (seenCount === 2)
-      return (
-        <span style={{ color: "blue" }}>
-          ✔✔
-        </span>
-      );
-
+    return (
+      <span className="ml-1 flex items-center">
+        {isSeen ? (
+          // ✅ Seen → double blue tick
+          <IoCheckmarkDone size={20} className="text-[#34B7F1] font-bold" />
+        ) : (
+          // ✅ Delivered → single white tick
+          <IoCheckmark size={20} className="text-white" />
+        )}
+      </span>
+    );
   };
-
 
 
 
   return (
 
-    <div style={{ maxWidth: 700, margin: "auto" }}>
+    <div className="flex flex-col h-screen w-full">
 
 
 
@@ -346,17 +348,9 @@ export default function ChatPage() {
 
       {/* messages */}
 
-      <div style={{
-        height: 400,
-        overflowY: "auto",
-        padding: 10
-      }}>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
         {messages.length === 0 && (
-          <div style={{
-            textAlign: "center",
-            marginTop: 20,
-            color: "gray"
-          }}>
+          <div className="bg-blue-500 text-white p-3 rounded-lg max-w-xs ml-auto">
             No messages yet. Start conversation 👋
           </div>
         )}
@@ -385,8 +379,8 @@ export default function ChatPage() {
 
                 background:
                   isMe
-                    ? "#007bff"
-                    : "#eee",
+                    ? "#072541"
+                    : "#f0eded",
 
                 color:
                   isMe
@@ -400,71 +394,68 @@ export default function ChatPage() {
                 display: "inline-block"
 
               }}>
+                <div
+                  style={{
+                    background: isMe ? "#072541" : "#f0eded",
+                    color: isMe ? "white" : "black",
+                    padding: 10,
+                    borderRadius: 10,
+                    display: "inline-block",
+                    maxWidth: "min(75%, 420px)",
+                    wordBreak: "break-word",
+                    overflowWrap: "anywhere",
+                  }}
+                >
+                  {msg.body}
+                </div>
 
-                <div style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: isMe ? "flex-end" : "flex-start"
-                }}>
-
-                  <span>{msg.body}</span>
-
-                  <div style={{
+                <div
+                  style={{
                     fontSize: 11,
                     marginTop: 2,
                     display: "flex",
                     gap: 4,
-                    alignItems: "center"
-                  }}>
-
-                    <span>
-                      {new Date(msg._creationTime).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-
-                    <span>{renderTicks(msg)}</span>
-
-                  </div>
-
+                    justifyContent: isMe ? "flex-end" : "flex-start",
+                    alignItems: "center",
+                  }}
+                >
+                  <span>{formatTime(msg._creationTime)}</span>
+                  {renderTicks(msg)}
                 </div>
-                
-
               </span>
-                    { !msg.isDeleted && (
+              {!msg.isDeleted && (
 
-                      <button
+                <button
 
-                        onClick={() => handleDelete(msg._id)}
+                  onClick={() => handleDelete(msg._id)}
 
-                        title="Delete message"
+                  title="Delete message"
 
-                        style={{
+                  style={{
 
-                          marginLeft: 6,
+                    marginLeft: 6,
 
-                          border: "none",
+                    border: "none",
 
-                          background: "transparent",
+                    background: "transparent",
 
-                          cursor: "pointer",
+                    cursor: "pointer",
 
-                          color: "grey",
+                    color: "grey",
 
-                          display: "inline-flex",
+                    display: "inline-flex",
 
-                          alignItems: "center"
+                    alignItems: "center"
 
-                        }}
+                  }}
 
-                      >
+                >
 
-                        <FaTrash size={12} />
+                  <FaTrash size={12} />
 
-                      </button>
+                </button>
 
-                    )}
+              )}
             </div>
 
           );
@@ -480,13 +471,12 @@ export default function ChatPage() {
 
       {/* input */}
 
-      <div style={{
-        display: "flex",
-        gap: 10,
-        padding: 10
-      }}>
+      <div className="border-t p-3 flex gap-2">
 
         <input
+          type="text"
+          placeholder="Type a message..."
+          className="flex-1 border rounded-lg px-3 py-2 outline-none"
 
           value={message}
 
@@ -496,7 +486,7 @@ export default function ChatPage() {
 
         />
 
-        <button onClick={handleSend}>
+        <button className="bg-blue-500 text-white px-4 rounded-lg" onClick={handleSend}>
           Send
         </button>
 
