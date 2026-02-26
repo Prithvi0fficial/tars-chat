@@ -331,6 +331,15 @@ export default function ChatPage() {
         overflowY: "auto",
         padding: 10
       }}>
+        {messages.length === 0 && (
+          <div style={{
+            textAlign: "center",
+            marginTop: 20,
+            color: "gray"
+          }}>
+            No messages yet. Start conversation 👋
+          </div>
+        )}
 
         {messages.map(msg => {
 
@@ -372,22 +381,32 @@ export default function ChatPage() {
 
               }}>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: isMe ? "flex-end" : "flex-start"
+                }}>
 
                   <span>{msg.body}</span>
 
-                  <span style={{
+                  <div style={{
                     fontSize: 11,
-                    color: isMe ? "#ddd" : "#555"
+                    marginTop: 2,
+                    display: "flex",
+                    gap: 4,
+                    alignItems: "center"
                   }}>
-                    {formatTime(msg.createdAt)}
-                  </span>
 
-                  <span style={{
-                    fontSize: 11
-                  }}>
-                    {renderTicks(msg)}
-                  </span>
+                    <span>
+                      {new Date(msg._creationTime).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+
+                    <span>{renderTicks(msg)}</span>
+
+                  </div>
 
                 </div>
 
