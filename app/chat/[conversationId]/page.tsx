@@ -9,44 +9,71 @@ import { useUser } from "@clerk/nextjs";
 import { Id } from "../../../convex/_generated/dataModel";
 import { FaTrash } from "react-icons/fa";
 
-export default function ChatPage() {
 
+
+
+export default function ChatPageWrapper() {
   const router = useRouter();
-  const params = useParams();
   const { user, isLoaded } = useUser();
+  const params = useParams();
 
+  const rawId = params?.conversationId;
+  const [ready, setReady] = useState(false);
+  const [validId, setValidId] = useState<Id<"conversations"> | null>(null);
+
+  useEffect(() => {
+    // Wait until Clerk finishes loading
+    if (!isLoaded) return;
+
+    // Not signed in → redirect to /sign-in
+    if (!user) {
+      router.replace("/sign-in");
+      return;
+    }
+
+    // Invalid conversationId → redirect home
+    if (!rawId || typeof rawId !== "string" || rawId.length < 25) {
+      router.replace("/");
+      return;
+    }
+
+    // Valid → allow ChatPage to render
+    setValidId(rawId as Id<"conversations">);
+    setReady(true);
+  }, [isLoaded, user, rawId, router]);
+
+  // Block render until ready
+  if (!ready) return null;
+
+  return <ChatPage conversationId={validId!} />;
+}
+
+// ✅ Step 2: Main component now receives conversationId as a prop
+function ChatPage({ conversationId }: { conversationId: Id<"conversations"> }) {
+  const router = useRouter();
+  const { user, isLoaded } = useUser();
   const [message, setMessage] = useState("");
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const formatTime = (timestamp: number) => {
-
     const date = new Date(timestamp);
-
     return date.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });
-
   };
 
-  // extract id
-  const rawConversationId = params.conversationId as string;
-
-  const conversationId =
-    rawConversationId?.length > 20
-      ? rawConversationId as Id<"conversations">
-      : undefined;
 
   // queries
-  const conversation = useQuery(
-    api.conversations.getConversation,
-    conversationId ? { conversationId } : "skip"
-  );
+const conversation = useQuery(
+  api.conversations.getConversation,
+  { conversationId }
+);
 
-  const messages = useQuery(
-    api.messages.getMessages,
-    conversationId ? { conversationId } : "skip"
-  );
+const messages = useQuery(
+  api.messages.getMessages,
+  { conversationId }
+);
 
   const users = useQuery(api.users.getUsers);
 
