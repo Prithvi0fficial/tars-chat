@@ -55,6 +55,7 @@ function ChatPage({ conversationId }: { conversationId: Id<"conversations"> }) {
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], {
@@ -65,15 +66,15 @@ function ChatPage({ conversationId }: { conversationId: Id<"conversations"> }) {
 
 
   // queries
-const conversation = useQuery(
-  api.conversations.getConversation,
-  { conversationId }
-);
+  const conversation = useQuery(
+    api.conversations.getConversation,
+    { conversationId }
+  );
 
-const messages = useQuery(
-  api.messages.getMessages,
-  { conversationId }
-);
+  const messages = useQuery(
+    api.messages.getMessages,
+    { conversationId }
+  );
 
   const users = useQuery(api.users.getUsers);
 
@@ -83,6 +84,7 @@ const messages = useQuery(
   const setTypingStatus = useMutation(api.users.setTypingStatus);
   const markAsSeen = useMutation(api.messages.markAsSeen);
   const deleteMessage = useMutation(api.messages.deleteMessage);
+
   // SAFE VALIDATION
   const handleDelete = async (messageId: Id<"messages">) => {
 
@@ -283,9 +285,7 @@ const messages = useQuery(
   };
 
 
-
   // ticks
-
 
   const renderTicks = (msg: any) => {
     // show ticks only for messages sent by me
@@ -305,7 +305,6 @@ const messages = useQuery(
       </span>
     );
   };
-
 
 
   return (
@@ -373,7 +372,7 @@ const messages = useQuery(
 
 
 
-      {/* messages */}
+      {/* messages} */}
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
         {messages.length === 0 && (
@@ -382,112 +381,17 @@ const messages = useQuery(
           </div>
         )}
 
-        {messages.map(msg => {
-
-          const isMe =
-            msg.senderId === currentUser._id;
-
-          return (
-
-            <div key={msg._id}
-
-              style={{
-
-                textAlign:
-                  isMe
-                    ? "right"
-                    : "left",
-
-                margin: 10
-
-              }}>
-
-              <span style={{
-
-                background:
-                  isMe
-                    ? "#072541"
-                    : "#f0eded",
-
-                color:
-                  isMe
-                    ? "white"
-                    : "black",
-
-                padding: 10,
-
-                borderRadius: 10,
-
-                display: "inline-block"
-
-              }}>
-                <div
-                  style={{
-                    background: isMe ? "#072541" : "#f0eded",
-                    color: isMe ? "white" : "black",
-                    padding: 10,
-                    borderRadius: 10,
-                    display: "inline-block",
-                    maxWidth: "min(75%, 420px)",
-                    wordBreak: "break-word",
-                    overflowWrap: "anywhere",
-                  }}
-                >
-                  {msg.body}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 11,
-                    marginTop: 2,
-                    display: "flex",
-                    gap: 4,
-                    justifyContent: isMe ? "flex-end" : "flex-start",
-                    alignItems: "center",
-                  }}
-                >
-                  <span>{formatTime(msg._creationTime)}</span>
-                  {renderTicks(msg)}
-                </div>
-              </span>
-              {!msg.isDeleted && (
-
-                <button
-
-                  onClick={() => handleDelete(msg._id)}
-
-                  title="Delete message"
-
-                  style={{
-
-                    marginLeft: 6,
-
-                    border: "none",
-
-                    background: "transparent",
-
-                    cursor: "pointer",
-
-                    color: "grey",
-
-                    display: "inline-flex",
-
-                    alignItems: "center"
-
-                  }}
-
-                >
-
-                  <FaTrash size={12} />
-
-                </button>
-
-              )}
-            </div>
-
-          );
-
-        })}
+        {messages.map((msg) => (
+          <MessageItem
+            key={msg._id}
+            msg={msg}
+            currentUser={currentUser}
+            otherUser={otherUser}
+            handleDelete={handleDelete}
+            formatTime={formatTime}
+            renderTicks={renderTicks}
+          />
+        ))}
 
         <div ref={messagesEndRef} />
 
@@ -524,3 +428,183 @@ const messages = useQuery(
   );
 
 }
+
+function MessageItem({
+  msg,
+  currentUser,
+  handleDelete,
+  formatTime,
+  renderTicks,
+}: any) {
+  const [showReactions, setShowReactions] = useState(false);
+
+  const reactions = useQuery(
+    api.reactions.getReactionsByMessage,
+    { messageId: msg._id }
+  );
+
+  const toggleReaction = useMutation(api.reactions.toggleReaction);
+
+  const groupedReactions = reactions?.reduce(
+    (acc: Record<string, number>, reaction: any) => {
+      acc[reaction.emoji] = (acc[reaction.emoji] || 0) + 1;
+      return acc;
+    },
+    {}
+  );
+
+  const isMe = msg.senderId === currentUser._id;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: isMe ? "flex-end" : "flex-start",
+        padding: "4px 12px",
+      }}
+    >
+      <div
+        onMouseEnter={() => setShowReactions(true)}
+        onMouseLeave={() => setShowReactions(false)}
+        style={{
+          position: "relative",
+          maxWidth: "75%",
+        }}
+      >
+        {/* Reaction Picker (hover only) */}
+        {showReactions && (
+          <div
+            style={{
+              position: "absolute",
+              top: -38,
+              right: isMe ? 0 : "auto",
+              left: isMe ? "auto" : 0,
+              background: "white",
+              borderRadius: 20,
+              padding: "6px 10px",
+              display: "flex",
+              gap: 8,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              zIndex: 10,
+            }}
+          >
+            {["👍", "❤️", "😂", "😮", "😢", "🙏"].map((emoji) => (
+              <span
+                key={emoji}
+                onClick={() =>
+                  toggleReaction({
+                    messageId: msg._id,
+                    userId: currentUser._id,
+                    emoji,
+                  })
+                }
+                style={{
+                  cursor: "pointer",
+                  fontSize: 18,
+                  transition: "transform 0.1s ease",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.transform = "scale(1.2)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.transform = "scale(1)")
+                }
+              >
+                {emoji}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Message Bubble */}
+        <div
+          style={{
+            background: isMe ? "#c7f0c0" : "#dac5c5",
+            padding: "8px 12px",
+            borderRadius: 12,
+            borderTopRightRadius: isMe ? 0 : 12,
+            borderTopLeftRadius: isMe ? 12 : 0,
+            boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+            fontSize: 14,
+            wordBreak: "break-word",
+          }}
+        >
+          <div>{msg.body}</div>
+
+          {/* Time + ticks */}
+          <div
+            style={{
+              fontSize: 11,
+              marginTop: 4,
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              gap: 4,
+              color: "#667781",
+            }}
+          >
+            <span>{formatTime(msg._creationTime)}</span>
+            {renderTicks(msg)}
+
+
+            {/* message deletion */}
+            {!msg.isDeleted && (
+              <button
+                onClick={() => handleDelete(msg._id)}
+                title="Delete message"
+                style={{
+                  marginLeft: 6,
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  color: "#667781",
+                  display: "inline-flex",
+                  alignItems: "center",
+                }}
+              >
+                <FaTrash size={12} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Reaction Pills */}
+        {groupedReactions &&
+          Object.keys(groupedReactions).length > 0 && (
+            <div
+              style={{
+                display: "flex",
+                gap: 6,
+                marginTop: 4,
+                flexWrap: "wrap",
+                justifyContent: isMe ? "flex-end" : "flex-start",
+              }}
+            >
+              {Object.entries(groupedReactions).map(
+                ([emoji, count]) => (
+                  <div
+                    key={emoji}
+                    style={{
+                      background: "#f0f2f5",
+                      borderRadius: 14,
+                      padding: "2px 8px",
+                      fontSize: 12,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                    }}
+                  >
+                    <span>{emoji}</span>
+                    <span>{count as number}</span>
+                  </div>
+                )
+              )}
+            </div>
+          )}
+
+
+      </div>
+    </div>
+  );
+}
+

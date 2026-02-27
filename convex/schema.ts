@@ -30,5 +30,6 @@ export default defineSchema({
     messageId: v.id("messages"),
     userId: v.id("users"),
     emoji: v.string(),
-  }).index("by_message", ["messageId"]),
+  }).index("by_message", ["messageId"])
+  .index("by_message_user_emoji", ["messageId", "userId", "emoji"]),
 });
