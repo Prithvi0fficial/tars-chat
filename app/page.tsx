@@ -31,8 +31,7 @@ export default function LandingPage() {
         </h1>
 
         <p className="text-gray-600 mb-10 text-lg animate-slideUp delay-150">
-          Real-time messaging with online status, typing indicators,
-          and modern responsive UI.
+          Sign Up and Start Real-time messaging with Friends 
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slideUp delay-300">

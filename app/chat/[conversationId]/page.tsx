@@ -8,7 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Id } from "../../../convex/_generated/dataModel";
 import { FaTrash } from "react-icons/fa";
-
+import { formatTime } from "@/app/lib/formatTime"; 
 
 
 
@@ -54,15 +54,6 @@ function ChatPage({ conversationId }: { conversationId: Id<"conversations"> }) {
   const { user, isLoaded } = useUser();
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-
-  const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
 
 
   // queries
