@@ -539,7 +539,7 @@ function MessageItem({
 
 
             {/* message deletion */}
-            {!msg.isDeleted && (
+            {!msg.isDeleted && isMe && (
               <button
                 onClick={() => handleDelete(msg._id)}
                 title="Delete message"
