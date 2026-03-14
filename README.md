@@ -1,11 +1,15 @@
 # 💬 Real-Time Chat Application  
-### Tars Full Stack Engineer Internship Coding Challenge 2026
+
+## 🌍 Live Demo
+
+Vercel Deployment:  
+[(Click here)](https://chat-npzjvqzst-prithvi0fficials-projects.vercel.app/)
 
 ---
 
 ## 📌 Project Overview
 
-This is a production-ready real-time one-on-one chat application built as part of the Tars Full Stack Engineer Internship Challenge 2026.
+This is a production-ready real-time one-on-one chat application .
 
 The application enables authenticated users to discover other users, initiate conversations, exchange messages in real time, react to messages, and manage their chat experience with modern UX patterns.
 
@@ -310,26 +314,8 @@ npx convex deploy
 - [ ] Responsive layout works on mobile
 - [ ] No console errors in production
 
----
 
-## 🎥 Demo Video
 
-Loom walkthrough explaining:
-
-- Feature demo
-- Architecture overview
-- Schema explanation
-- Real-time system behavior
-
-Loom Link:  
-(Add link here)
-
----
-
-## 🌍 Live Demo
-
-Vercel Deployment:  
-(Add link here)
 
 ---
 
