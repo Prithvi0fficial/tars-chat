@@ -337,10 +337,4 @@ Email: prithvi8289@gmail.com
 GitHub: https://github.com/Prithvi0fficial
 LinkedIn: www.linkedin.com/in/prithvi-v-
 
----
 
-## 📄 License
-
-This project was developed for evaluation purposes as part of the Tars Full Stack Engineer Internship Challenge 2026.
-
----
