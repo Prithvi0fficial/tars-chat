@@ -3,7 +3,7 @@
 ## 🌍 Live Demo
 
 Vercel Deployment:  
-[(Click here)](https://chat-npzjvqzst-prithvi0fficials-projects.vercel.app/)
+[Click here](https://chat-npzjvqzst-prithvi0fficials-projects.vercel.app/)
 
 ---
 
